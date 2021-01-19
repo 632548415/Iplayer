@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">MyMediaPlay</string>
+    <string name="time_hint">- : -</string>
+</resources>
