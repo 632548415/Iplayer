@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 背景  gradient是渐变,corners定义的是圆角 -->
+    <!-- 背景  圆角 -->
     <item android:id="@android:id/background"
         android:layout_width="wrap_content">
         <shape>
@@ -13,7 +13,7 @@
         <clip>
             <shape>
                 <corners android:radius="@dimen/dp_3" />
-                <solid android:color="@color/progress_color" />
+                <solid android:color="@color/play_bg" />
             </shape>
         </clip>
     </item>

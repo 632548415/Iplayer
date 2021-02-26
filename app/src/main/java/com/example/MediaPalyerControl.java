@@ -1,5 +1,6 @@
 package com.example;
 
+import android.app.Activity;
 import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -10,6 +11,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.example.utils.StringUtils;
+import com.example.view.ControlView;
 import com.example.views.ProgressControlView;
 import com.example.views.SurfaceAndProgressView;
 
@@ -28,37 +30,49 @@ import static android.content.ContentValues.TAG;
  *  @描述：    TODO
  */
 public class MediaPalyerControl
-        implements MediaPlayer.OnPreparedListener, SurfaceHolder.Callback
-{
-    private boolean             mIsLoop = false;
-    private SurfaceHolder       mSurfaceHolder;
-    private MediaPlayer         mMediaPlayer;
-    private Context             mContext;
-    private String              mUrl    = "http://148.70.46.9/456.mp4";
-    private SurfaceView         mSurfaceView;
+        implements MediaPlayer.OnPreparedListener, SurfaceHolder.Callback, ControlView, MediaPlayer.OnBufferingUpdateListener {
+    public static final int READING = 0;            //缓冲中
+    public static final int PREPARED = 1;           //准备完成
+    public static final int PLAYING = 2;            //播放中
+    public static final int SUSPEND = 3;            //暂停中
+    public static final int CONTUIN_PLAYING = 4;    //继续播放
+    public static final int STOP = 5;               //停止
+    private int mCurrentPlayState = READING;
+    private boolean mIsLoop = false;
+    private SurfaceHolder mSurfaceHolder;
+    private MediaPlayer mMediaPlayer;
+    private Context mContext;
+    private String mUrl = "http://148.70.46.9/456.mp4";
+    private SurfaceView mSurfaceView;
     private ProgressControlView mProgressControlView;
-    private Timer               mTimer;
+    private Timer mTimer;
 
     public MediaPalyerControl(SurfaceAndProgressView surfaceAndProgressView, Context context) {
+        mContext = context;
         mSurfaceView = surfaceAndProgressView.getSurfaceView();
         mProgressControlView = surfaceAndProgressView.getProgressControlView();
-        mContext = context;
-
+        mProgressControlView.setView(this);
         mSurfaceHolder = mSurfaceView.getHolder();
         mSurfaceHolder.addCallback(this);
         mMediaPlayer = new MediaPlayer();
         mMediaPlayer.setOnPreparedListener(this);
+        mMediaPlayer.setOnBufferingUpdateListener(this);
     }
 
+    /**
+     * 视屏的状态，准备中，准备完成，播放中，暂停中，继续播放，播放完成，
+     *
+     * @param mp
+     */
 
     @Override
     public void onPrepared(MediaPlayer mp) {
         //视频准备完成时触发
-        Log.d(TAG, "onPrepared: start");
+        upDataVideoCurrentState(PREPARED);
         mProgressControlView.setMaxProgress(mp.getDuration());
         mProgressControlView.setMaxTime(StringUtils.lengthForTime(mp.getDuration()));
         mMediaPlayer.setDisplay(mSurfaceHolder);
-        mMediaPlayer.start();
+
     }
 
     @Override
@@ -68,7 +82,8 @@ public class MediaPalyerControl
             mMediaPlayer.setDataSource(mContext, Uri.parse(mUrl));
             mMediaPlayer.setLooping(mIsLoop);
             mMediaPlayer.prepareAsync();
-
+            //开始准备视屏
+            upDataVideoCurrentState(READING);
             mTimer = new Timer();
             mTimer.schedule(mTimerTask, 1000, 1000);
         } catch (IOException e) {
@@ -108,11 +123,64 @@ public class MediaPalyerControl
 
     /**
      * 设置循环播放
+     *
      * @param loop true 循环播放
      */
     public void setLoop(boolean loop) {
         mIsLoop = loop;
     }
 
+    /**
+     * 开始播放
+     */
+    @Override
+    public void start() {
+        if (mMediaPlayer != null && (mCurrentPlayState == PREPARED | mCurrentPlayState == SUSPEND) && !mMediaPlayer.isPlaying()) {
+            mMediaPlayer.start();
+            upDataVideoCurrentState(PLAYING);
+        }
+    }
 
+    /**
+     * 暂停播放
+     */
+    @Override
+    public void pause() {
+        if (mMediaPlayer != null && mCurrentPlayState == PLAYING && mMediaPlayer.isPlaying()) {
+            mMediaPlayer.pause();
+            upDataVideoCurrentState(SUSPEND);
+        }
+    }
+
+    @Override
+    public boolean isPlaying() {
+        return mMediaPlayer.isPlaying();
+    }
+
+    /**
+     * 跟新视屏当前状态
+     *
+     * @param state
+     */
+    @Override
+    public void upDataVideoCurrentState(int state) {
+        mCurrentPlayState = state;
+        mProgressControlView.upDataVideoState(state);
+    }
+
+    @Override
+    public void fastBackAndForwarld(int progress) {
+        if (mMediaPlayer != null) {
+            mMediaPlayer.seekTo(progress);
+            upDataVideoCurrentState(READING);
+        }
+    }
+
+    @Override
+    public void onBufferingUpdate(MediaPlayer mp, int percent) {
+        //缓冲或播放的百分比percent
+        if (mCurrentPlayState == READING) {
+            upDataVideoCurrentState(PLAYING);
+        }
+    }
 }

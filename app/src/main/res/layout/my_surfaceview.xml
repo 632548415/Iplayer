@@ -14,7 +14,7 @@
         android:layout_marginEnd="@dimen/dp_5"
         android:layout_marginBottom="@dimen/dp_5"
         android:id="@+id/progress_control"
-        android:layout_alignParentBottom="true"
+        android:layout_centerInParent="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 </RelativeLayout>

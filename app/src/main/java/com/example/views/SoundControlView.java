@@ -34,7 +34,6 @@ public class SoundControlView extends RelativeLayout {
         if (am != null) {
             int streamMaxVolume = am.getStreamMaxVolume(AudioManager.STREAM_SYSTEM);
             int streamVolume    = am.getStreamVolume(AudioManager.STREAM_SYSTEM);
-            progressView.setAngle(streamMaxVolume,streamVolume);
         }
     }
 

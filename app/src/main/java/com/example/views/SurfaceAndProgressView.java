@@ -1,5 +1,6 @@
 package com.example.views;
 
+import android.app.Activity;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.SurfaceView;
@@ -14,7 +15,7 @@ import com.example.R;
  *  @文件名:   ISurfaceView
  *  @创建者:   Administrator
  *  @创建时间:  2021/1/17 0017 0:01
- *  @描述：    显示视频,控制播放进度
+ *  @描述：    显示视频
  */
 public class SurfaceAndProgressView
         extends RelativeLayout {
@@ -35,7 +36,6 @@ public class SurfaceAndProgressView
         View.inflate(context, R.layout.my_surfaceview,this);
         mSurfaceView = findViewById(R.id.surface_view);
         mProgressControlView = findViewById(R.id.progress_control);
-
     }
 
     public SurfaceView getSurfaceView() {
