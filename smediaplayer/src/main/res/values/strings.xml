@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">SMediaPlayer</string>
+    <string name="time_hint">00:00</string>
+    <string name="faust">快进</string>
+    <string name="back">快退</string>
+    <string name="error_text">视频出错了</string>
+    <string name="error_btn_text">点击重试</string>
+    <string name="complete_text">重播</string>
+</resources>

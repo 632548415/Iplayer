@@ -4,8 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".activity.MainActivity">
-    <com.example.views.SurfaceAndProgressView
-        android:id="@+id/surface_progress"
+    <example.com.smediaplayer.views.SVideoView
+        android:id="@+id/s_video_view"
         android:layout_width="match_parent"
         android:layout_height="250dp"/>
 </RelativeLayout>
