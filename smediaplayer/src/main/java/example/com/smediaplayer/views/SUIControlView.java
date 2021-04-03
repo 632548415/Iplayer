@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AnimationUtils;
@@ -47,7 +48,7 @@ public class SUIControlView
     private              TextView           mBackForward;
     private              SoundProgressView  mSoundProgressView;
     private              LinearLayout       mBottomContainer;
-    private              LinearLayout       mTopContainer;
+    private              RelativeLayout       mTopContainer;
     private              TextView           mCurrentTime;
     private              TextView           mMaxTime;
     private              SeekBar            mBottomProgress;
@@ -359,10 +360,13 @@ public class SUIControlView
                         mCurrentPosition = mPlay.getCurrentPosition();
                         mNeedChangePosition = true;
                     } else if (descY >= 10) {
-                        if (mDownX < getWidth() * .5f) {
+                        if (mDownX < getWidth() * 0.5f) {
                             //修改亮度
                             mNeedChangeBrightness = true;
                             mDownBrightnes = mSettingUtils.getBrightnes();
+                            if (mDownBrightnes == -1.0f){
+                                mDownBrightnes = 0.0f;
+                            }
                         } else {
                             //修改音量
                             mNeedChangeVolume = true;
@@ -388,6 +392,7 @@ public class SUIControlView
                     newresultBrightness = Math.max(0, Math.min(newresultBrightness, 1));
                     mSettingUtils.setBrightnes(newresultBrightness);
                     mSoundProgressView.setBrightnes(newresultBrightness);
+                    Log.d("TAG", "onTouch: "+mDownBrightnes+"  "+deltaBrightness);
                 }
                 if (mNeedChangePosition) {
                     long duration   = mPlay.getDuration();

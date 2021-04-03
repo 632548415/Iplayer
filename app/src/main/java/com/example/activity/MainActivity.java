@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
         //mSVideoView.setUp(mUrl,null);
         //mSVideoView.setRawSource(R.raw.text);
         mSVideoView.setAssetsSource("text.mp4");
+
     }
 
     @Override

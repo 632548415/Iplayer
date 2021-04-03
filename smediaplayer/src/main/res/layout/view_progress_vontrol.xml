@@ -143,19 +143,46 @@
             android:src="@mipmap/full_screen" />
     </LinearLayout>
     <!--顶部UI-->
-    <LinearLayout
+    <RelativeLayout
         android:visibility="gone"
         android:id="@+id/top_ui_container"
         android:background="@drawable/video_top_color"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="wrap_content">
         <!--返回按钮-->
         <ImageView
+            android:layout_centerVertical="true"
             android:id="@+id/back"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/dp_10"
             android:src="@mipmap/back" />
-    </LinearLayout>
+        <TextView
+            android:layout_centerVertical="true"
+            android:layout_toRightOf="@id/back"
+            android:layout_marginStart="@dimen/dp_15"
+            android:layout_gravity="center"
+            android:textColor="@color/white"
+            android:text="我是标题"
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        <LinearLayout
+            android:layout_centerVertical="true"
+            android:layout_alignParentRight="true"
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                android:textColor="@color/white"
+                android:text="00:00"
+                android:id="@+id/time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+    </RelativeLayout>
 </RelativeLayout>
