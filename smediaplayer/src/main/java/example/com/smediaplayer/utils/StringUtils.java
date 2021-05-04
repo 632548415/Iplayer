@@ -3,11 +3,13 @@ package example.com.smediaplayer.utils;
 import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.text.TextUtils;
 import android.view.Window;
 import android.view.WindowManager;
 
 import java.util.Formatter;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -106,4 +108,15 @@ public class StringUtils {
 
 
     }
+
+    public static boolean isVideo(String path){
+        if (TextUtils.isEmpty(path))
+            return false;
+        int index = path.lastIndexOf(".");
+        String videoType = path.substring(index);
+        String reg = "(mp4|flv|avi|rm|rmvb|wmv)";
+        Pattern p = Pattern.compile(reg);
+        return p.matcher(videoType).find();
+    }
+
 }

@@ -4,10 +4,15 @@ import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
@@ -15,12 +20,14 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import java.io.IOException;
 import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import example.com.smediaplayer.thread.ImageThread;
 import example.com.smediaplayer.utils.SpUtils;
 import example.com.smediaplayer.utils.StringUtils;
 
@@ -48,21 +55,25 @@ public class SVideoView
                    MediaPlayer.OnInfoListener
 {
 
-    private int                 mCurrentWindowModel = WINDOW_MODEL_DEFAULT;              //当前窗口模式
-    private int                 mCurrentPalyState   = STATE_IDLE;                        //当前播放状态 http://gslb.miaopai.com/stream/oxX3t3Vm5XPHKUeTS-zbXA__.mp4
-    private String              mPath;                      //http://148.70.46.9/456.mp4
-    private Map<String, String> mHeaders;
-    private Context             mContext;
-    private CustomTextureView   mTextureView;
-    private MediaPlayer         mMediaPlayer;
-    private SurfaceTexture      mSurfaceTexture;
-    private Surface             mSurface;
-    private FrameLayout         mContainer;
-    private SUIControlView      mSUIControlView;
-    private int                 mSecondaryProgress;      //缓冲进度百分比 最大100
-    private boolean             mIsReset;//播放是否重新开始过
-    private AssetFileDescriptor mAfd;
-    private AssetManager mAssets;
+    private static final String              TAG                 = "SVideoView";
+    private              int                 mCurrentWindowModel = WINDOW_MODEL_DEFAULT;              //当前窗口模式
+    private              int                 mCurrentPalyState   = STATE_IDLE;                        //当前播放状态 http://gslb.miaopai.com/stream/oxX3t3Vm5XPHKUeTS-zbXA__.mp4
+    private              String              mPath;                      //http://148.70.46.9/456.mp4
+    private              Map<String, String> mHeaders;
+    private              Context             mContext;
+    private              CustomTextureView   mTextureView;
+    private              MediaPlayer         mMediaPlayer;
+    private              SurfaceTexture      mSurfaceTexture;
+    private              Surface             mSurface;
+    private              FrameLayout         mContainer;
+    private              SUIControlView      mSUIControlView;
+    private              int                 mSecondaryProgress;      //缓冲进度百分比 最大100
+    private              boolean             mIsReset;//播放是否重新开始过
+    private              AssetFileDescriptor mAfd;
+    private              AssetManager        mAssets;
+    private              ImageView           mPreView;
+    private              Handler             mHandler;
+    private              ImageThread         mImageThread;
 
     public SVideoView(@NonNull Context context) {
         this(context, null);
@@ -77,10 +88,24 @@ public class SVideoView
     private void init() {
         mContainer = new FrameLayout(mContext);
         mContainer.setBackgroundColor(Color.BLACK);
+        //预览view
+        mPreView = new ImageView(mContext);
         LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         addView(mContainer, lp);
 
         initTextureView();
+        mHandler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                Log.e(TAG, "handleMessage: PreView image error" + msg.what);
+                if (msg.obj instanceof Bitmap) {
+                    Bitmap bitmap = (Bitmap) msg.obj;
+                    mPreView.setImageBitmap(bitmap);
+                    int childCount = mContainer.getChildCount();
+                    if (childCount >= 1) { mContainer.addView(mPreView, 1); }
+                }
+            }
+        };
     }
 
     private void initTextureView() {
@@ -94,10 +119,10 @@ public class SVideoView
     private void addTextureView() {
         if (mContainer != null) {
             mContainer.removeView(mTextureView);
-            LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT,
-                                               LayoutParams.MATCH_PARENT,
+            LayoutParams lp = new LayoutParams(LayoutParams.WRAP_CONTENT,
+                                               LayoutParams.WRAP_CONTENT,
                                                Gravity.CENTER);
-            mContainer.addView(mTextureView, 0, lp);
+            mContainer.addView(mTextureView, lp);
         }
     }
 
@@ -128,13 +153,17 @@ public class SVideoView
                                                mAfd.getStartOffset(),
                                                mAfd.getLength());
                 } else {
-                    mMediaPlayer.setDataSource(mContext, Uri.parse(mPath), mHeaders);
+                    if (mHeaders == null) {
+                        mMediaPlayer.setDataSource(mPath);
+                    } else {
+                        mMediaPlayer.setDataSource(mContext, Uri.parse(mPath), mHeaders);
+                    }
                 }
                 mCurrentPalyState = STATE_READYING;
                 mSUIControlView.updatePlayState(mCurrentPalyState);
                 mMediaPlayer.prepareAsync();
             } catch (Exception e) {
-                Log.d("TAG", "initVideoPLay: IO错误 或 mPath=null");
+                Log.e(TAG, "initVideoPLay: IO错误 或 mPath=null" + e.getLocalizedMessage());
             }
         }
     }
@@ -183,6 +212,8 @@ public class SVideoView
         } else {
             mCurrentPalyState = STATE_READYED;
             mSUIControlView.updatePlayState(mCurrentPalyState);
+            mTextureView.inFullScreen(mp.getVideoWidth(),mp.getVideoHeight());
+            mTextureView.requestLayout();
         }
     }
 
@@ -240,6 +271,11 @@ public class SVideoView
             mCurrentPalyState = STATE_PLAYING;
             mSUIControlView.updatePlayState(mCurrentPalyState);
             mMediaPlayer.start();
+            //移除预览图
+            int childCount = mContainer.getChildCount();
+            if (childCount > 1) {
+                mContainer.removeViewAt(1);
+            }
         }
     }
 
@@ -317,6 +353,7 @@ public class SVideoView
                 int videoWidth  = mMediaPlayer.getVideoWidth();
                 int videoHeight = mMediaPlayer.getVideoHeight();
                 mTextureView.inFullScreen(videoWidth, videoHeight);
+                //mTextureView.setRotation();
             }
         }
     }
@@ -334,7 +371,6 @@ public class SVideoView
             addView(mContainer);
             mCurrentWindowModel = WINDOW_MODEL_DEFAULT;
             mSUIControlView.updateWindowModel(mCurrentWindowModel);
-            mTextureView.inFullScreen(0, 0);
         }
     }
 
@@ -374,23 +410,31 @@ public class SVideoView
                                                mAfd.getStartOffset(),
                                                mAfd.getLength());
                 } else {
-                    mMediaPlayer.setDataSource(mContext, Uri.parse(mPath), mHeaders);
+                    if (mHeaders == null) {
+                        mMediaPlayer.setDataSource(mPath);
+                    } else {
+                        mMediaPlayer.setDataSource(mContext, Uri.parse(mPath), mHeaders);
+                    }
                 }
-
                 mMediaPlayer.prepareAsync();
                 mCurrentPalyState = STATE_READYING;
                 mSUIControlView.updatePlayState(mCurrentPalyState);
             } catch (Exception e) {
-                Log.d("TAG", "initVideoPLay: IO错误 或 mPath=null");
+                Log.e(TAG, "initVideoPLay: IO错误 或 mPath=null" + e.getLocalizedMessage());
             }
 
         }
     }
 
     //设置网络/文件视频
-    public void setUp(String path, Map<String, String> headers) {
+    public void setPath(String path, Map<String, String> headers) {
         mPath = path;
         mHeaders = headers;
+    }
+
+    //设置网络/文件视频
+    public void setPath(String path) {
+        mPath = path;
     }
 
     //设置raw资源
@@ -410,9 +454,21 @@ public class SVideoView
         try {
             mAfd = mAssets.openFd(sourceName);
         } catch (IOException e) {
-            Log.d("TAG", "initVideoPLay: assets资源错误");
+            Log.e(TAG, "initVideoPLay: assets资源错误" + e.getLocalizedMessage());
         }
 
+    }
+
+    /**
+     * 设置预览图
+     * @param path  视频地址or图片地址
+     */
+    public void setPreView(String path) {
+        if (TextUtils.isEmpty(path)) { return; }
+        if (mImageThread == null) {
+            mImageThread = new ImageThread(mHandler, path);
+            mImageThread.start();
+        }
     }
 
     @Override
@@ -450,7 +506,7 @@ public class SVideoView
                 }
             }
         }
-        if (mAssets != null){
+        if (mAssets != null) {
             mAssets.close();
         }
         mCurrentPalyState = STATE_IDLE;
